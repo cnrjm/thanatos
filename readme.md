@@ -1,4 +1,4 @@
-![alt text](img\thanny.jpg "Title")
+![Alt text](img/thanny.jpg?raw=true "Thanatos")
 <br>
 ┏┳┓┓┏┏┓┳┓┏┓┏┳┓┏┓┏┓
  ┃ ┣┫┣┫┃┃┣┫ ┃ ┃┃┗┓
