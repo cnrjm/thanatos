@@ -163,6 +163,7 @@ name = "task-m"
 version = "0.1.0"
 dependencies = [
  "sysinfo",
+ "winapi",
 ]
 
 [[package]]
