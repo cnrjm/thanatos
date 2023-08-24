@@ -22,9 +22,9 @@ fn main() {
     let mut p: Vec<(String, u64)> = process_memory_map.into_iter().collect();
     p.sort_by(|a, b| b.1.cmp(&a.1));
 
-    for (name, memory_bytes) in p.iter() {
+    for (index, (name, memory_bytes)) in p.iter().enumerate() {
         let memory_mb = (*memory_bytes as f64) / (1024.0 * 1024.0);
-        println!("Name: {}, Memory: {:.2} MB", name, memory_mb);
+        println!("{}. Name: {}, Memory: {:.2} MB", index + 1, name, memory_mb);
     }
 
     find_visible_windows();
