@@ -2,8 +2,9 @@ extern crate winapi;
 use sysinfo::{ProcessExt, System, SystemExt};
 use std::ptr;
 use winapi::shared::windef::HWND;
-use winapi::um::winuser::{EnumWindows, GetWindowTextW, IsWindowVisible};
+use winapi::um::winuser::{EnumWindows, GetWindowTextW, IsWindowVisible, PostMessageW, WM_CLOSE};
 use std::collections::HashMap;
+use std::process::Command;
 
 fn main() {
     let mut s = System::new_all();
@@ -28,6 +29,41 @@ fn main() {
     }
 
     find_visible_windows();
+
+        // Ask the user for input
+        println!("Enter the index of the process to terminate:");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).expect("Failed to read line");
+        let index_to_terminate = input.trim().parse::<usize>().expect("Invalid input");
+        
+        if index_to_terminate > 0 && index_to_terminate <= p.len() {
+            let process_name_to_terminate = &p[index_to_terminate - 1].0;
+            terminate_process(process_name_to_terminate);
+        } else {
+            println!("Invalid index selected");
+        }
+    }
+    
+    fn terminate_process(process_name: &str) {
+        // Use the `taskkill` command to terminate the process
+        let output = Command::new("taskkill")
+            .arg("/F") // Forcefully terminate the process
+            .arg("/IM")
+            .arg(process_name)
+            .output();
+    
+        match output {
+            Ok(o) => {
+                if o.status.success() {
+                    println!("Successfully terminated process: {}", process_name);
+                } else {
+                    println!("Failed to terminate process: {}", process_name);
+                }
+            }
+            Err(_) => {
+                println!("Failed to execute taskkill command");
+            }
+        }
 }
 
 fn find_visible_windows() {
