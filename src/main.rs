@@ -1,86 +1,97 @@
 extern crate winapi;
 use sysinfo::{ProcessExt, System, SystemExt};
-use std::ptr;
 use winapi::shared::windef::HWND;
-use winapi::um::winuser::{EnumWindows, GetWindowTextW, IsWindowVisible, PostMessageW, WM_CLOSE};
+use winapi::um::winuser::{EnumWindows, GetWindowTextW, IsWindowVisible};
 use std::collections::HashMap;
 use std::process::Command;
+use std::thread;
+use std::time::Duration;
+use crossterm::{
+    execute, cursor, terminal, ExecutableCommand,
+    event::{self, KeyCode, KeyEvent, KeyModifiers}
+};
 
 fn main() {
     let mut s = System::new_all();
-    s.refresh_all();
-    
-    let mut process_memory_map: HashMap<String, u64> = HashMap::new();
 
-    for (_pid, process) in s.processes() {
-        let process_name = process.name().to_owned();
-        let memory_usage = process.memory();
+    loop {
+        s.refresh_all();
 
-        let entry = process_memory_map.entry(process_name).or_insert(0);
-        *entry += memory_usage;
+        let mut process_memory_map: HashMap<String, u64> = HashMap::new();
+
+        for (_pid, process) in s.processes() {
+            let process_name = process.name().to_owned();
+            let memory_usage = process.memory();
+
+            let entry = process_memory_map.entry(process_name).or_insert(0);
+            *entry += memory_usage;
+        }
+
+        let mut p: Vec<(String, u64)> = process_memory_map.into_iter().collect();
+        p.sort_by(|a, b| b.1.cmp(&a.1));
+
+        for (index, (name, memory_bytes)) in p.iter().enumerate() {
+            let memory_mb = (*memory_bytes as f64) / (1024.0 * 1024.0);
+            println!("{}. Name: {}, Memory: {:.2} MB", index + 1, name, memory_mb);
+        }
+
+        // Wait for a short duration before refreshing again
+        thread::sleep(Duration::from_secs(1)); // Adjust the duration as needed
     }
+}
 
-    let mut p: Vec<(String, u64)> = process_memory_map.into_iter().collect();
-    p.sort_by(|a, b| b.1.cmp(&a.1));
-
-    for (index, (name, memory_bytes)) in p.iter().enumerate() {
-        let memory_mb = (*memory_bytes as f64) / (1024.0 * 1024.0);
-        println!("{}. Name: {}, Memory: {:.2} MB", index + 1, name, memory_mb);
-    }
-
-    find_visible_windows();
+    // find_visible_windows();
 
         // Ask the user for input
-        println!("Enter the index of the process to terminate:");
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).expect("Failed to read line");
-        let index_to_terminate = input.trim().parse::<usize>().expect("Invalid input");
+        // println!("Enter the index of the process to terminate:");
+        // let mut input = String::new();
+        // std::io::stdin().read_line(&mut input).expect("Failed to read line");
+        // let index_to_terminate = input.trim().parse::<usize>().expect("Invalid input");
         
-        if index_to_terminate > 0 && index_to_terminate <= p.len() {
-            let process_name_to_terminate = &p[index_to_terminate - 1].0;
-            terminate_process(process_name_to_terminate);
-        } else {
-            println!("Invalid index selected");
-        }
-    }
+        // if index_to_terminate > 0 && index_to_terminate <= p.len() {
+        //     let process_name_to_terminate = &p[index_to_terminate - 1].0;
+        //     terminate_process(process_name_to_terminate);
+        // } else {
+        //     println!("Invalid index selected");
+        // }
     
-    fn terminate_process(process_name: &str) {
-        // Use the `taskkill` command to terminate the process
-        let output = Command::new("taskkill")
-            .arg("/F") // Forcefully terminate the process
-            .arg("/IM")
-            .arg(process_name)
-            .output();
+//     fn terminate_process(process_name: &str) {
+//         // Use the `taskkill` command to terminate the process
+//         let output = Command::new("taskkill")
+//             .arg("/F") // Forcefully terminate the process
+//             .arg("/IM")
+//             .arg(process_name)
+//             .output();
     
-        match output {
-            Ok(o) => {
-                if o.status.success() {
-                    println!("Successfully terminated process: {}", process_name);
-                } else {
-                    println!("Failed to terminate process: {}", process_name);
-                }
-            }
-            Err(_) => {
-                println!("Failed to execute taskkill command");
-            }
-        }
-}
+//         match output {
+//             Ok(o) => {
+//                 if o.status.success() {
+//                     println!("Successfully terminated process: {}", process_name);
+//                 } else {
+//                     println!("Failed to terminate process: {}", process_name);
+//                 }
+//             }
+//             Err(_) => {
+//                 println!("Failed to execute taskkill command");
+//             }
+//         }
+// }
 
-fn find_visible_windows() {
-    unsafe extern "system" fn enum_windows_callback(hwnd: HWND, _l_param: isize) -> winapi::ctypes::c_int {
-        let mut buffer = [0u16; 256];
-        GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
+// fn find_visible_windows() {
+//     unsafe extern "system" fn enum_windows_callback(hwnd: HWND, _l_param: isize) -> winapi::ctypes::c_int {
+//         let mut buffer = [0u16; 256];
+//         GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
     
-        let window_title = String::from_utf16_lossy(&buffer);
+//         let window_title = String::from_utf16_lossy(&buffer);
     
-        if !window_title.trim().is_empty() && IsWindowVisible(hwnd) != 0 {
-            println!("Visible window: {}", window_title.trim());
-        }
+//         if !window_title.trim().is_empty() && window_title.trim().len() > 2 && IsWindowVisible(hwnd) != 0 {
+//             println!("{}", window_title.trim());
+//         }
     
-        1 // Continue enumeration
-    }
+//         1 // Continue enumeration
+//     }
 
-    unsafe {
-        EnumWindows(Some(enum_windows_callback), 0);
-    }
-}
+//     unsafe {
+//         EnumWindows(Some(enum_windows_callback), 0);
+//     }
+// }
