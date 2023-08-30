@@ -5,8 +5,10 @@ use winapi::shared::windef::HWND;
 use winapi::um::winuser::{EnumWindows, GetWindowTextW, IsWindowVisible, PostMessageW, WM_CLOSE};
 use std::collections::HashMap;
 use std::process::Command;
+use inputbot::{KeySequence, KeybdKey::*, MouseButton::*};
 
 fn main() {
+    Numrow9Key.bind(||main());
     let mut s = System::new_all();
     s.refresh_all();
     
@@ -88,4 +90,6 @@ fn find_visible_windows() {
     unsafe {
         EnumWindows(Some(enum_windows_callback), 0);
     }
+
+    inputbot::handle_input_events();
 }
