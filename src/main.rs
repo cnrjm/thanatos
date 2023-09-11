@@ -32,6 +32,9 @@ fn main() {
             println!("{:<4} {:<30} {:.2} MB", index + 1, name, memory_mb);
         }
 
+        println!("Enter 'exit' to close the application.");
+        println!("Enter 'kill ID' to kill a process by its ID (e.g., 'kill 1').");
+
         let mut input = String::new();
         std::io::stdin()
             .read_line(&mut input)
